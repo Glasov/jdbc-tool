@@ -29,6 +29,22 @@ public class ReflectionUtils {
         return DESERIALIZERS.get(type);
     }
 
+    public static int getPrimitivesCount(Type type) {
+        if (type instanceof Class<?> clazz) {
+            int result = 0;
+            for (FieldInfo fieldInfo : ReflectionUtils.getFields(clazz)) {
+                if (fieldInfo.isPrimitive()) {
+                    result++;
+                } else {
+                    result += getPrimitivesCount(fieldInfo.getType());
+                }
+            }
+            return result;
+        } else {
+            return 0;
+        }
+    }
+
     public static List<FieldInfo> getFields(Class<?> clazz) {
         return Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
@@ -46,6 +62,6 @@ public class ReflectionUtils {
     }
 
     private static boolean isOptional(Type type) {
-        return type.getTypeName().equals(Optional.class.getTypeName());
+        return type.equals(Optional.class);
     }
 }

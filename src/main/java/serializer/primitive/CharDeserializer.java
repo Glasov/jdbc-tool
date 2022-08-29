@@ -1,7 +1,7 @@
 package serializer.primitive;
 
-import serializer.SerializedNode;
 import serializer.Deserializer;
+import serializer.SerializedNode;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -17,7 +17,7 @@ public class CharDeserializer implements Deserializer {
 
     @Override
     public Object deserialize(Type type, SerializedNode node) {
-        return node.value().charAt(0);
+        return node.next().charAt(0);
     }
 
     @Override

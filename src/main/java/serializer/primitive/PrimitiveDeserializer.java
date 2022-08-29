@@ -1,12 +1,12 @@
 package serializer.primitive;
 
-import serializer.SerializedNode;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import serializer.Deserializer;
+import serializer.SerializedNode;
 
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 public class PrimitiveDeserializer implements Deserializer {
     private static final List<Deserializer> DESERIALIZERS = List.of(
@@ -21,29 +21,23 @@ public class PrimitiveDeserializer implements Deserializer {
             new StringDeserializer()
     );
 
-    private static Optional<Deserializer> getSuitable(Type type) {
-        return DESERIALIZERS.stream().filter(d -> d.suitable(type)).findFirst();
+    private static Deserializer getSuitableOrThrow(Type type) {
+        return DESERIALIZERS.stream().filter(d -> d.suitable(type)).findFirst().orElseThrow();
     }
 
     @Override
-    public SerializedNode serialize(Type type, Object object) {
-        Optional<Deserializer> deserializer = getSuitable(type);
-        if (deserializer.isEmpty()) {
-            throw new RuntimeException("not found primitive deserializer for " + type);
-        }
-        return deserializer.get().serialize(type, object);
+    public SerializedNode serialize(Type type, @Nullable Object object) {
+        Deserializer deserializer = getSuitableOrThrow(type);
+        return deserializer.serialize(type, object);
     }
 
     @Override
-    public Object deserialize(Type type, SerializedNode node) {
-        if (Objects.isNull(node.value())) {
+    public Object deserialize(Type type, @NonNull SerializedNode node) {
+        if (node.isNullValue()) {
+            node.next();
             return null;
         }
-        Optional<Deserializer> deserializer = getSuitable(type);
-        if (deserializer.isEmpty()) {
-            throw new RuntimeException("not found primitive deserializer for " + type);
-        }
-        return deserializer.get().deserialize(type, node);
+        return getSuitableOrThrow(type).deserialize(type, node);
     }
 
     @Override

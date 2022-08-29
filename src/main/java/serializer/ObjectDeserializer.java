@@ -20,45 +20,43 @@ public class ObjectDeserializer implements Deserializer {
 
     @Override
     public SerializedNode serialize(Type type, Object object) {
-        SerializedNode head = SerializedNode.empty();
-        SerializedNode tail = head;
+        if (Objects.isNull(object)) {
+            return SerializedNode.empty(ReflectionUtils.getPrimitivesCount(type));
+        }
+        SerializedNode node = SerializedNode.empty();
         for (FieldInfo field : fields) {
             try {
                 Object value = field.get(object);
                 if (value instanceof Optional<?> optional) {
-                    if (field.isPrimitive()) {
-                        value = optional.orElse(null);
-                    } else {
-                        value = optional.isEmpty() ? INSTANCE_SUPPLIER.newInstance((Class<?>) field.getType()) : optional.get();
-                    }
+                    value = optional.orElse(null);
                 }
-                tail.setNext(field.getDeserializer().serialize(field.getType(), value));
-                tail = tail.getTail();
+                node.append(field.getDeserializer().serialize(field.getType(), value));
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
-        return head.next();
+        return SerializedNode.of(node.getHead());
     }
 
     @Override
     public Object deserialize(Type type, SerializedNode node) {
         Object instance = INSTANCE_SUPPLIER.newInstance(clazz);
-        boolean setAnyField = false;
+        int setFields = 0;
 
         for (FieldInfo field : fields) {
             Type fieldType = field.getType();
             Deserializer deserializer = field.getDeserializer();
             Object fieldValue = deserializer.deserialize(fieldType, node);
-            setAnyField = setAnyField || Objects.nonNull(fieldValue);
+            setFields += (Objects.nonNull(fieldValue) || field.isOptional()) ? 1 : 0;
             try {
-                field.set(instance, field.isOptional() ? Optional.ofNullable(fieldValue) : fieldValue);
+                if (field.isOptional()) fieldValue = Optional.ofNullable(fieldValue);
+                if (Objects.nonNull(fieldValue)) field.setRaw(instance, fieldValue);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        return setAnyField ? instance : null;
+        return setFields == fields.size() ? instance : null;
     }
 
     @Override

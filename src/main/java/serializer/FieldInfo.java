@@ -6,7 +6,6 @@ import org.springframework.lang.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -60,18 +59,12 @@ public class FieldInfo {
         return deserializer;
     }
 
-    public void set(
+    public void setRaw(
             @NonNull
             Object object,
             @Nullable
             Object value) throws IllegalAccessException
     {
-        if (Objects.nonNull(value) && !type.equals(value.getClass())) {
-            throw new IllegalArgumentException(
-                    "can't set object field. wrong type: expected " + type.getTypeName() +
-                            ", got " + value.getClass().getTypeName()
-            );
-        }
         field.set(object, isOptional ? Optional.ofNullable(value) : value);
     }
 
