@@ -72,16 +72,6 @@ public class FieldInfo {
         return field.get(object);
     }
 
-    public FieldInfo withOptional(boolean isOptional) {
-        return new FieldInfo(
-                field,
-                type,
-                isOptional,
-                isPrimitive,
-                deserializer
-        );
-    }
-
     @Override
     public String toString() {
         return "FieldInfo{" +
