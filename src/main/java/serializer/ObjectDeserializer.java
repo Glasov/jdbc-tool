@@ -1,11 +1,11 @@
 package serializer;
 
-import org.springframework.objenesis.ObjenesisStd;
-
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.springframework.objenesis.ObjenesisStd;
 
 public class ObjectDeserializer implements Deserializer {
     private static final ObjenesisStd INSTANCE_SUPPLIER = new ObjenesisStd(true);

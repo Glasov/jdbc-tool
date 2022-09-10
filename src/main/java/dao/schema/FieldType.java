@@ -4,7 +4,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum SchemaItemType {
+public enum FieldType {
     BOOLEAN,
     BYTE,
     CHAR,
@@ -16,7 +16,7 @@ public enum SchemaItemType {
     STRING,
     NONE;
 
-    private static Map<Type, SchemaItemType> TYPE_BY_TYPE = new HashMap<>();
+    private static final Map<Type, FieldType> TYPE_BY_TYPE = new HashMap<>();
 
     static {
         TYPE_BY_TYPE.put(Boolean.class, BOOLEAN);
@@ -38,7 +38,7 @@ public enum SchemaItemType {
         TYPE_BY_TYPE.put(String.class, STRING);
     }
 
-    public static SchemaItemType get(Type type) {
+    public static FieldType get(Type type) {
         return TYPE_BY_TYPE.getOrDefault(type, NONE);
     }
 }

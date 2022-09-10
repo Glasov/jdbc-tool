@@ -1,19 +1,21 @@
 package serializer;
 
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 public class FieldInfo {
     private final Field field;
     private final Type type;
     private final boolean isOptional;
-    private final Set<Annotation> annotations;
+    private final Set<Class<? extends Annotation>> annotations;
     private final boolean isPrimitive;
     private final Deserializer deserializer;
 
@@ -21,10 +23,12 @@ public class FieldInfo {
         this.field = field;
         this.type = type;
         this.isOptional = isOptional;
-        this.annotations = Set.of(field.getDeclaredAnnotations());
+        this.annotations = Stream.of(field.getDeclaredAnnotations())
+                .map(Annotation::annotationType)
+                .collect(Collectors.toSet());
         this.isPrimitive = isPrimitive;
         this.deserializer = deserializer;
-        field.setAccessible(true);
+        this.field.setAccessible(true);
     }
 
     public Type getType() {
@@ -47,11 +51,11 @@ public class FieldInfo {
         return field.getName();
     }
 
-    public Set<Annotation> getAnnotations() {
+    public Set<Class<? extends Annotation>> getAnnotations() {
         return annotations;
     }
 
-    public boolean hasAnnotation(Annotation annotation) {
+    public boolean hasAnnotation(Class<? extends Annotation> annotation) {
         return annotations.contains(annotation);
     }
 

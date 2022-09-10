@@ -1,7 +1,5 @@
 package serializer;
 
-import serializer.primitive.PrimitiveDeserializer;
-
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -11,6 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import serializer.primitive.PrimitiveDeserializer;
 
 public class ReflectionUtils {
     private static final Map<Type, Deserializer> DESERIALIZERS = new ConcurrentHashMap<>();

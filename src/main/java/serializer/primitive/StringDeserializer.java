@@ -1,10 +1,10 @@
 package serializer.primitive;
 
-import serializer.Deserializer;
-import serializer.SerializedNode;
-
 import java.lang.reflect.Type;
 import java.util.Objects;
+
+import serializer.Deserializer;
+import serializer.SerializedNode;
 
 public class StringDeserializer implements Deserializer {
     @Override

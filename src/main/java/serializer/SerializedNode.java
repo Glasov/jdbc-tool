@@ -31,6 +31,7 @@ public class SerializedNode implements Iterator<String> {
     }
 
     public static SerializedNode of(SerializedValue serializedValue) {
+        System.out.println("created node from: " + serializedValue);
         return new SerializedNode(serializedValue);
     }
 
@@ -91,6 +92,24 @@ public class SerializedNode implements Iterator<String> {
             value = value.getNext();
         }
         return value;
+    }
+
+    public String join(String separator) {
+        StringBuilder result = new StringBuilder("(");
+        SerializedValue tmp = head;
+        while (Objects.nonNull(tmp)) {
+            result.append(tmp.getValue());
+            if (tmp.hasNext()) result.append(separator);
+            tmp = tmp.getNext();
+        }
+
+        result.append(")");
+
+        return result.toString();
+    }
+
+    public String join() {
+        return join(",");
     }
 
     @Override

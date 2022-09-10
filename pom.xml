@@ -22,6 +22,12 @@
             <artifactId>spring-core</artifactId>
             <version>5.3.22</version>
         </dependency>
+        <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.1.2</version>
+        </dependency>
+
     </dependencies>
     <name>Archetype - jdbc-tool</name>
   <url>http://maven.apache.org</url>

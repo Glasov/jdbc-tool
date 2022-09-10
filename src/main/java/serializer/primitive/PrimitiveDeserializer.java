@@ -1,12 +1,12 @@
 package serializer.primitive;
 
+import java.lang.reflect.Type;
+import java.util.List;
+
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import serializer.Deserializer;
 import serializer.SerializedNode;
-
-import java.lang.reflect.Type;
-import java.util.List;
 
 public class PrimitiveDeserializer implements Deserializer {
     private static final List<Deserializer> DESERIALIZERS = List.of(

@@ -1,8 +1,8 @@
 package serializer;
 
-import org.springframework.lang.Nullable;
-
 import java.util.Objects;
+
+import org.springframework.lang.Nullable;
 
 public class SerializedValue {
     @Nullable
@@ -48,6 +48,10 @@ public class SerializedValue {
 
     public String getValue() {
         return value;
+    }
+
+    public SerializedNode toNode() {
+        return SerializedNode.of(this);
     }
 
     @Nullable
