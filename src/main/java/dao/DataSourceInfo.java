@@ -1,24 +1,29 @@
 package dao;
 
+import java.util.Optional;
+
 /**
  * @author alexglasov
  */
 public class DataSourceInfo {
+    private final String driver;
     private final String url;
     private final String user;
     private final String password;
-    private final int minPoolSize;
-    private final int maxPoolSize;
-    private final int maxStatements;
+    private final Optional<Integer> minPoolSize;
+    private final Optional<Integer> maxPoolSize;
+    private final Optional<Integer> maxStatements;
 
     public DataSourceInfo(
+            String driver,
             String url,
             String user,
             String password,
-            int minPoolSize,
-            int maxPoolSize,
-            int maxStatements)
+            Optional<Integer> minPoolSize,
+            Optional<Integer> maxPoolSize,
+            Optional<Integer> maxStatements)
     {
+        this.driver = driver;
         this.url = url;
         this.user = user;
         this.password = password;
@@ -39,15 +44,19 @@ public class DataSourceInfo {
         return password;
     }
 
-    public int getMinPoolSize() {
+    public String getDriver() {
+        return driver;
+    }
+
+    public Optional<Integer> getMinPoolSize() {
         return minPoolSize;
     }
 
-    public int getMaxPoolSize() {
+    public Optional<Integer> getMaxPoolSize() {
         return maxPoolSize;
     }
 
-    public int getMaxStatements() {
+    public Optional<Integer> getMaxStatements() {
         return maxStatements;
     }
 }

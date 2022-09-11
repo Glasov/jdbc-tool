@@ -34,31 +34,32 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     }
 
     @Override
-    public boolean create(Collection<TValue> values) {
+    public boolean create(Collection<TValue> values) throws SQLException {
         return execute(prepareCreate(values));
     }
 
     @Override
-    public Collection<TValue> read(Collection<TKey> keys) {
+    public Collection<TValue> read(Collection<TKey> keys) throws SQLException {
         return request(prepareRead(keys));
     }
 
     @Override
-    public boolean update(Collection<TValue> values) {
+    public boolean update(Collection<TValue> values) throws SQLException {
         return execute(prepareUpdate(values));
     }
 
     @Override
-    public boolean delete(Collection<TKey> keys) {
+    public boolean delete(Collection<TKey> keys) throws SQLException {
         return execute(prepareDelete(keys));
     }
 
-    private List<TValue> request(String query) {
+    private List<TValue> request(String query) throws SQLException {
+        if (query.isBlank()) return List.of();
         Connection connection = getConnection();
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             ResultSet resultSet = preparedStatement.executeQuery();
             return toNodes(resultSet).stream()
-                    .map(n -> (TValue) valueDeserializer.deserialize(valueClass, n))
+                    .map(node -> (TValue) valueDeserializer.deserialize(valueClass, node))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             try {
@@ -71,7 +72,8 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
         return List.of();
     }
 
-    private boolean execute(String query) {
+    private boolean execute(String query) throws SQLException {
+        if (query.isBlank()) return false;
         Connection connection = getConnection();
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
@@ -90,6 +92,7 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     }
 
     private String prepareCreate(Collection<TValue> values) {
+        if (values.isEmpty()) return "";
         String serializedValues = values.stream()
                 .map(v -> valueDeserializer.serialize(valueClass, v))
                 .map(SerializedNode::join)
@@ -102,6 +105,7 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     }
 
     private String prepareRead(Collection<TKey> keys) {
+        if (keys.isEmpty()) return "";
         List<SerializedNode> serializedKeys = keys.stream()
                 .map(key -> keyDeserializer.serialize(keyClass, key))
                 .toList();
@@ -112,6 +116,7 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     }
 
     private String prepareUpdate(Collection<TValue> values) {
+        if (values.isEmpty()) return "";
         String serializedValues = values.stream()
                 .map(v -> valueDeserializer.serialize(valueClass, v))
                 .map(SerializedNode::join)
@@ -124,6 +129,7 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     }
 
     private String prepareDelete(Collection<TKey> keys) {
+        if (keys.isEmpty()) return "";
         List<SerializedNode> serializedKeys = keys.stream()
                 .map(key -> keyDeserializer.serialize(keyClass, key))
                 .toList();
@@ -204,7 +210,7 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
         return valueClass;
     }
 
-    protected abstract Connection getConnection();
+    protected abstract Connection getConnection() throws SQLException;
 
     public abstract String getName();
 }
