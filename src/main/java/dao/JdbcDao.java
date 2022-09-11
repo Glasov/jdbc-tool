@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import dao.schema.FieldType;
 import dao.schema.Schema;
+import dao.schema.SchemaItem;
 import serializer.Deserializer;
 import serializer.ObjectDeserializer;
 import serializer.SerializedNode;
@@ -56,51 +58,38 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     private List<TValue> request(String query) throws SQLException {
         if (query.isBlank()) return List.of();
         Connection connection = getConnection();
+        connection.setAutoCommit(false);
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             ResultSet resultSet = preparedStatement.executeQuery();
             return toNodes(resultSet).stream()
                     .map(node -> (TValue) valueDeserializer.deserialize(valueClass, node))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
+            connection.rollback();
+            throw e;
         }
-
-        return List.of();
     }
 
     private boolean execute(String query) throws SQLException {
         if (query.isBlank()) return false;
         Connection connection = getConnection();
+        connection.setAutoCommit(false);
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
             preparedStatement.execute();
             connection.commit();
             return true;
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
+            connection.rollback();
+            throw e;
         }
-
-        return false;
     }
 
     private String prepareCreate(Collection<TValue> values) {
         if (values.isEmpty()) return "";
-        String serializedValues = values.stream()
-                .map(v -> valueDeserializer.serialize(valueClass, v))
-                .map(SerializedNode::join)
-                .reduce((a, b) -> a + "," + b)
-                .orElseThrow();
         return String.format(
                 "INSERT INTO %s (%s) VALUES %s;",
-                getName(), schema.joinColumns(), serializedValues
+                getName(), schema.joinColumns(), joinValues(values)
         );
     }
 
@@ -117,14 +106,9 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
 
     private String prepareUpdate(Collection<TValue> values) {
         if (values.isEmpty()) return "";
-        String serializedValues = values.stream()
-                .map(v -> valueDeserializer.serialize(valueClass, v))
-                .map(SerializedNode::join)
-                .reduce((a, b) -> a + "," + b)
-                .orElseThrow();
         return String.format(
                 "UPDATE %s SET %s FROM (VALUES %s) AS %s(%s) WHERE %s;",
-                getName(), generateUpdateSet(), serializedValues, TMP, schema.joinColumns(), generateUpdateKeyWhere()
+                getName(), generateUpdateSet(), joinValues(values), TMP, schema.joinColumns(), generateUpdateKeyWhere()
         );
     }
 
@@ -141,20 +125,23 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
 
     private List<SerializedNode> toNodes(ResultSet resultSet) throws SQLException {
         SerializedValue serializedValue;
+        SerializedValue head;
         List<SerializedNode> result = new ArrayList<>();
         while (resultSet.next()) {
-            serializedValue = SerializedValue.empty();
-            for (int column = 0; column < schema.columnsCount(); column++) {
+            head = SerializedValue.empty();
+            serializedValue = head;
+            for (int column = 1; column <= schema.columnsCount(); column++) {
                 serializedValue.setNext(SerializedValue.of(resultSet.getString(column)));
+                serializedValue = serializedValue.getNext();
             }
-            serializedValue = serializedValue.getNext();
-            result.add(Objects.nonNull(serializedValue) ? serializedValue.toNode() : SerializedNode.empty());
+            head = head.getNext();
+            result.add(Objects.nonNull(head) ? head.toNode() : SerializedNode.empty());
         }
 
         return result;
     }
 
-    public String generateKeysWhere(List<SerializedNode> nodes) {
+    private String generateKeysWhere(List<SerializedNode> nodes) {
         StringBuilder stringBuilder = new StringBuilder();
         Iterator<SerializedNode> nodeIterator = nodes.iterator();
         while (nodeIterator.hasNext()) {
@@ -165,18 +152,18 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
         return stringBuilder.toString();
     }
 
-    public void generateKeyWhere(SerializedNode node, StringBuilder stringBuilder) {
+    private void generateKeyWhere(SerializedNode node, StringBuilder stringBuilder) {
         stringBuilder.append("(");
         Iterator<String> columnsIterator = schema.getKeyColumns().iterator();
         while (columnsIterator.hasNext()) {
             stringBuilder.append(columnsIterator.next()).append("=").append(node.next());
-            if (columnsIterator.hasNext()) stringBuilder.append("AND ");
+            if (columnsIterator.hasNext()) stringBuilder.append(" AND ");
         }
 
         stringBuilder.append(")");
     }
 
-    public String generateUpdateSet() {
+    private String generateUpdateSet() {
         StringBuilder stringBuilder = new StringBuilder();
         Iterator<String> columnIterator = schema.getValueColumns().iterator();
         while (columnIterator.hasNext()) {
@@ -189,7 +176,7 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
         return stringBuilder.toString();
     }
 
-    public String generateUpdateKeyWhere() {
+    private String generateUpdateKeyWhere() {
         StringBuilder stringBuilder = new StringBuilder();
         Iterator<String> columnIterator = schema.getKeyColumns().iterator();
         while (columnIterator.hasNext()) {
@@ -200,6 +187,25 @@ public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
             if (columnIterator.hasNext()) stringBuilder.append(" AND ");
         }
         return stringBuilder.toString();
+    }
+
+    private String joinValues(Collection<TValue> values) {
+        return values.stream()
+                .map(v -> valueDeserializer.serialize(valueClass, v))
+                .map(node -> {
+                    StringBuilder stringBuilder = new StringBuilder("(");
+                    Iterator<SchemaItem> schemaItemIterator = schema.getFullSchema().iterator();
+                    while (schemaItemIterator.hasNext()) {
+                        SchemaItem schemaItem = schemaItemIterator.next();
+                        if (schemaItem.getType() == FieldType.STRING) stringBuilder.append("'");
+                        stringBuilder.append(node.next());
+                        if (schemaItem.getType() == FieldType.STRING) stringBuilder.append("'");
+                        if (schemaItemIterator.hasNext()) stringBuilder.append(",");
+                    }
+                    return stringBuilder.append(")").toString();
+                })
+                .reduce((a, b) -> a + "," + b)
+                .orElseThrow();
     }
 
     public Class<TKey> getKeyClass() {

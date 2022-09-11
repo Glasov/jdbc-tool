@@ -31,7 +31,6 @@ public class SerializedNode implements Iterator<String> {
     }
 
     public static SerializedNode of(SerializedValue serializedValue) {
-        System.out.println("created node from: " + serializedValue);
         return new SerializedNode(serializedValue);
     }
 
