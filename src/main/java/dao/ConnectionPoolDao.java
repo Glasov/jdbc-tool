@@ -10,7 +10,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
  * @author alexglasov
  */
 public class ConnectionPoolDao<TKey, TValue> extends JdbcDao<TKey, TValue> {
-    private static ComboPooledDataSource dataSource = new ComboPooledDataSource();
+    private final ComboPooledDataSource dataSource = new ComboPooledDataSource();
 
     public ConnectionPoolDao(Class<TKey> tKeyClass, Class<TValue> tValueClass, DataSourceInfo dataSourceInfo)
             throws PropertyVetoException

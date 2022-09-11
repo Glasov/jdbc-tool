@@ -21,6 +21,7 @@ import serializer.SerializedValue;
 
 public abstract class JdbcDao<TKey, TValue> implements CrudDao<TKey, TValue> {
     private static final String TMP = "__tmp__";
+
     private final Class<TKey> keyClass;
     private final Class<TValue> valueClass;
     private final Schema schema;

@@ -93,24 +93,6 @@ public class SerializedNode implements Iterator<String> {
         return value;
     }
 
-    public String join(String separator) {
-        StringBuilder result = new StringBuilder("(");
-        SerializedValue tmp = head;
-        while (Objects.nonNull(tmp)) {
-            result.append(tmp.getValue());
-            if (tmp.hasNext()) result.append(separator);
-            tmp = tmp.getNext();
-        }
-
-        result.append(")");
-
-        return result.toString();
-    }
-
-    public String join() {
-        return join(",");
-    }
-
     @Override
     public String toString() {
         return "SerializedNode{" +
