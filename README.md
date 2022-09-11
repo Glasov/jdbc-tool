@@ -1,1 +1,1 @@
-# shit
+# simple jdbc tool
